@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useAppContext, formatMoney } from '../context/AppContext';
-import { ModalBase } from '../components/SharedUI';
+import { ModalBase, ScreenHeader } from '../components/SharedUI';
 import { GenericForm } from '../components/Forms/GenericForm';
 
 export function CadastrosGenericosScreen({ activeTab }: { activeTab: string }) {
@@ -53,15 +53,18 @@ export function CadastrosGenericosScreen({ activeTab }: { activeTab: string }) {
     categorias: { defaultData: { nome: '' }, fields: [
       { name: 'nome', label: 'Nome', type: 'text', required: true }
     ] },
-    usuarios: { defaultData: { nome: '', email: '', perfil: 'vendedor' }, fields: [
+    usuarios: { submitLabel: 'Criar acesso', busyLabel: 'Criando acesso...', defaultData: { nome: '', email: '', perfil: 'vendedor', senha: '', confirmarSenha: '' }, fields: [
       { name: 'nome', label: 'Nome', type: 'text', required: true },
       { name: 'email', label: 'E-mail', type: 'email', required: true },
-      { name: 'perfil', label: 'Perfil', type: 'select', required: true, options: [{ val: 'vendedor', label: 'Vendedor' }, { val: 'admin', label: 'Administrador' }] }
+      { name: 'perfil', label: 'Perfil', type: 'select', required: true, options: [{ val: 'vendedor', label: 'Vendedor' }, { val: 'admin', label: 'Administrador' }] },
+      { name: 'senha', label: 'Senha (opcional)', type: 'password', placeholder: 'Deixe vazio para enviar convite' },
+      { name: 'confirmarSenha', label: 'Confirmar senha', type: 'password', placeholder: 'Repita a senha criada' }
     ] }
   };
 
   const config = configs[activeTab];
   const collection = activeTab;
+  const titles: Record<string, string> = { fornecedores: 'Fornecedores', contas: 'Contas', categorias: 'Categorias', usuarios: 'Usuários' };
   const salvar = async (item: any) => {
     await salvarCadastro(collection, item, itemEditando?.id);
     setModalAberto(false);
@@ -70,15 +73,9 @@ export function CadastrosGenericosScreen({ activeTab }: { activeTab: string }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-8 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2 capitalize">{activeTab}</h1>
-          <p className="text-slate-500">Gestão completa liberada.</p>
-        </div>
-        <button onClick={() => { setItemEditando(null); setModalAberto(true); }} className="flex w-full items-center justify-center rounded-xl bg-[var(--vistta-plum)] px-6 py-3 font-semibold text-white hover:bg-[var(--vistta-violet)] sm:w-auto">
+      <ScreenHeader eyebrow="Cadastros" title={titles[activeTab] || activeTab} description="Gestão completa liberada." action={<button onClick={() => { setItemEditando(null); setModalAberto(true); }} className="flex w-full items-center justify-center rounded-xl bg-[var(--vistta-plum)] px-6 py-3 font-semibold text-white hover:bg-[var(--vistta-violet)] sm:w-auto">
           <Plus size={20} className="mr-2" /> Adicionar
-        </button>
-      </div>
+        </button>} />
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-2 flex-1 flex flex-col min-h-[400px]">
         <div className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar">

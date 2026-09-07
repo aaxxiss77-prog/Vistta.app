@@ -14,11 +14,12 @@ import { CadastrosGenericosScreen } from './screens/CadastrosGenericosScreen';
 import { OrdensServicoScreen } from './screens/OrdensServicoScreen';
 import { HelpScreen } from './screens/HelpScreen';
 import { SetupOticaScreen } from './screens/SetupOticaScreen';
+import { PlatformAdminScreen } from './screens/PlatformAdminScreen';
 import { Home, ShoppingCart, Boxes, Users, Menu, Moon, Sun, LogOut } from 'lucide-react';
 import { LogoVistta } from './components/SharedUI';
 
 function MainLayout() {
-  const { activeTab, user, loadingAuth, setActiveTab, carrinho, userRole, dadosEmpresa, empresaId, databaseError, logout } = useAppContext();
+  const { activeTab, user, loadingAuth, setActiveTab, carrinho, userRole, platformOwner, dadosEmpresa, empresaId, databaseError, logout } = useAppContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
@@ -59,6 +60,11 @@ function MainLayout() {
   // Redireciona para o Login se não estiver autenticado
   if (!user) {
     return <AuthScreen />;
+  }
+
+  const isAdminPath = window.location.pathname === '/admin' || activeTab === 'platform';
+  if (isAdminPath) {
+    return platformOwner ? <PlatformAdminScreen /> : <ForbiddenScreen />;
   }
 
   if (!empresaId) {
@@ -104,9 +110,10 @@ function MainLayout() {
           </div>
           <div className="space-y-2">
             {[
+              ...(platformOwner ? [['platform', 'Administração global']] : []),
               ['caixa', 'Caixa Diário'], ['orcamentos', 'Orçamentos'], ['ordens', 'Ordens de Serviço'], ['categorias', 'Categorias'], ['ajuda', 'Ajuda e Treinamento'],
               ...(userRole === 'admin' ? [['financeiro', 'Financeiro'], ['contas', 'Contas'], ['fornecedores', 'Fornecedores'], ['usuarios', 'Usuários']] : [])
-            ].map(([tab, label]) => <button key={tab} onClick={() => { setActiveTab(tab); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-700">{label}</button>)}
+            ].map(([tab, label]) => <button key={tab} onClick={() => { if (tab === 'platform') window.history.pushState({}, '', '/admin'); setActiveTab(tab); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-700">{label}</button>)}
           </div>
           <button onClick={() => logout().catch((error) => console.error('Não foi possível sair:', error))} className="mt-6 flex w-full items-center gap-3 border-t border-slate-100 px-4 pt-5 text-left font-bold text-rose-500 dark:border-slate-700"><LogOut size={18} /> Sair da conta</button>
         </div>
@@ -114,6 +121,10 @@ function MainLayout() {
       </div>
     </div>
   );
+}
+
+function ForbiddenScreen() {
+  return <div className="vistta-shell flex min-h-[100dvh] items-center justify-center p-6"><div className="max-w-md rounded-3xl border border-[var(--vistta-border)] bg-[var(--vistta-surface)] p-8 text-center shadow-[0_20px_60px_rgba(48,32,77,.1)]"><h1 className="font-display text-2xl font-bold">Acesso não autorizado</h1><p className="mt-3 text-sm leading-6 text-[var(--vistta-secondary)]">Esta área é exclusiva do proprietário da plataforma.</p><a href="/" className="mt-6 inline-flex rounded-xl bg-[var(--vistta-plum)] px-5 py-3 text-sm font-bold text-white hover:bg-[var(--vistta-violet)]">Voltar ao sistema</a></div></div>;
 }
 
 function MobileNav({ icon: Icon, label, active, onClick, badge = 0 }: any) {

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Lock, Wallet, PlusCircle } from 'lucide-react';
+import { Lock, PlusCircle } from 'lucide-react';
 import { useAppContext, formatMoney, toList } from '../context/AppContext';
 import { Caixa } from '../types';
+import { ScreenHeader } from '../components/SharedUI';
 
 export function CaixaScreen() {
   const { caixaAberto, totalVendasCaixa, caixas, abrirCaixa, fecharCaixa, registrarLancamentoCaixa } = useAppContext();
@@ -23,20 +24,14 @@ export function CaixaScreen() {
   
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Caixa Diário</h1>
-          <p className="text-slate-500">Abertura e fechamento de caixa para o PDV.</p>
-        </div>
-        {caixaAberto ? (
+      <ScreenHeader eyebrow="Operação" title="Caixa Diário" description="Abertura e fechamento de caixa para o PDV." action={caixaAberto ? (
           <button disabled={processando} onClick={() => executar(fecharCaixa)} className="bg-rose-500 text-white px-6 py-3 rounded-xl font-semibold shadow-md disabled:opacity-60">Fechar Caixa</button>
         ) : (
           <button disabled={processando} onClick={() => {
             const valor = Number(valorInicial.replace(',', '.'));
             executar(() => abrirCaixa(valor));
           }} className="bg-[var(--vistta-plum)] text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:bg-[var(--vistta-violet)] disabled:opacity-60">Abrir Caixa</button>
-        )}
-      </div>
+        )} />
 
       {caixaAberto ? (
         <div className="bg-white rounded-3xl p-6 sm:p-8 mb-10 flex flex-col gap-8 shadow-sm border border-slate-100">

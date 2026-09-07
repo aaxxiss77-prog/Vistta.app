@@ -1,10 +1,12 @@
 import { initializeApp } from 'firebase-admin/app';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { getDatabase, ServerValue } from 'firebase-admin/database';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 initializeApp();
 
 const database = getDatabase();
+const adminAuth = getAdminAuth();
 const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
 
 type UserProfile = { empresaId?: string; role?: string };
@@ -18,9 +20,21 @@ type SalePayload = {
   items: SaleItem[];
 };
 
+type CallableRequest = { auth?: { uid: string; token?: Record<string, unknown> } | null; data?: any };
+
 function requireAuth(request: { auth?: { uid: string } | null }): string {
   if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Usuário não autenticado.');
   return request.auth.uid;
+}
+
+function requireOwner(request: CallableRequest): string {
+  const uid = requireAuth(request);
+  if (request.auth?.token?.platformOwner !== true) throw new HttpsError('permission-denied', 'Somente o proprietário da plataforma pode executar esta operação.');
+  return uid;
+}
+
+async function writePlatformAudit(actorUid: string, action: string, metadata: Record<string, unknown> = {}) {
+  await database.ref('platformAudit').push({ actorUid, action, metadata, timestamp: new Date().toISOString(), origin: 'cloud-function' });
 }
 
 async function getCompany(uid: string, adminOnly = false): Promise<{ empresaId: string; profile: UserProfile }> {
@@ -199,4 +213,68 @@ export const addCashEntry = onCall(async request => {
   const entryRef = database.ref(`empresas/${empresaId}/caixas/${caixaId}/lancamentos`).push();
   await entryRef.set({ tipo, descricao, valor, data: new Date().toISOString(), operador: uid });
   return { entryId: entryRef.key };
+});
+
+export const getPlatformOverview = onCall(async request => {
+  const ownerUid = requireOwner(request);
+  const [usersSnapshot, companiesSnapshot, auditSnapshot] = await Promise.all([
+    database.ref('users').get(),
+    database.ref('empresas').get(),
+    database.ref('platformAudit').limitToLast(25).get()
+  ]);
+  const users = usersSnapshot.val() && typeof usersSnapshot.val() === 'object' ? Object.entries(usersSnapshot.val() as Record<string, any>) : [];
+  const companies = companiesSnapshot.val() && typeof companiesSnapshot.val() === 'object' ? Object.entries(companiesSnapshot.val() as Record<string, any>) : [];
+  const isActive = (value: any) => !['blocked', 'suspended', 'inactive'].includes(String(value?.status || '').toLowerCase());
+  const now = Date.now();
+  const newSince = now - 30 * 24 * 60 * 60 * 1000;
+  const createdAt = (value: any) => Date.parse(value?.createdAt || value?.criadoEm || '') || 0;
+  const recentLogins = users.map(([uid, value]) => ({ uid, ...value })).filter(value => value.lastLoginAt).sort((a, b) => Date.parse(String(b.lastLoginAt)) - Date.parse(String(a.lastLoginAt))).slice(-10).reverse();
+  const activity = auditSnapshot.val() && typeof auditSnapshot.val() === 'object' ? Object.entries(auditSnapshot.val() as Record<string, any>).map(([id, value]) => ({ id, ...value })).reverse() : [];
+  await writePlatformAudit(ownerUid, 'platform.overview.viewed');
+  return {
+    generatedAt: new Date().toISOString(),
+    users: { total: users.length, active: users.filter(([, value]) => isActive(value)).length, blocked: users.filter(([, value]) => !isActive(value)).length, newLast30Days: users.filter(([, value]) => createdAt(value) >= newSince).length },
+    companies: { total: companies.length, active: companies.filter(([, value]) => isActive(value?.info)).length, blocked: companies.filter(([, value]) => !isActive(value?.info)).length, newLast30Days: companies.filter(([, value]) => createdAt(value?.info) >= newSince).length },
+    recentLogins,
+    recentActivity: activity,
+    security: { ownerUid, mfa: 'not_configured', suspiciousAttempts: 'not_collected' },
+    billing: { configured: false, message: 'Nenhuma integração de planos ou pagamentos foi configurada.' }
+  };
+});
+
+export const listPlatformCompanies = onCall(async request => {
+  const ownerUid = requireOwner(request);
+  const [companiesSnapshot, usersSnapshot] = await Promise.all([database.ref('empresas').get(), database.ref('users').get()]);
+  const companies = companiesSnapshot.val() && typeof companiesSnapshot.val() === 'object' ? companiesSnapshot.val() as Record<string, any> : {};
+  const users = usersSnapshot.val() && typeof usersSnapshot.val() === 'object' ? Object.values(usersSnapshot.val() as Record<string, any>) : [];
+  const result = Object.entries(companies).map(([companyId, value]) => ({ companyId, info: value?.info || {}, userCount: users.filter((user: any) => user.empresaId === companyId).length }));
+  await writePlatformAudit(ownerUid, 'platform.companies.viewed');
+  return { companies: result };
+});
+
+export const setCompanyStatus = onCall(async request => {
+  const ownerUid = requireOwner(request);
+  const companyId = String(request.data?.companyId || '');
+  const status = String(request.data?.status || '');
+  if (!companyId || !['active', 'blocked'].includes(status)) throw new HttpsError('invalid-argument', 'Empresa ou status inválido.');
+  const companyRef = database.ref(`empresas/${companyId}/info`);
+  if (!(await companyRef.get()).exists()) throw new HttpsError('not-found', 'Empresa não encontrada.');
+  await companyRef.update({ status, updatedAt: new Date().toISOString(), updatedBy: ownerUid });
+  await writePlatformAudit(ownerUid, 'company.status.changed', { companyId, status });
+  return { companyId, status };
+});
+
+export const setUserStatus = onCall(async request => {
+  const ownerUid = requireOwner(request);
+  const uid = String(request.data?.uid || '');
+  const status = String(request.data?.status || '');
+  if (!uid || !['active', 'blocked'].includes(status)) throw new HttpsError('invalid-argument', 'Usuário ou status inválido.');
+  if (uid === ownerUid) throw new HttpsError('failed-precondition', 'O proprietário não pode bloquear a própria conta.');
+  const userRef = database.ref(`users/${uid}`);
+  if (!(await userRef.get()).exists()) throw new HttpsError('not-found', 'Usuário não encontrado.');
+  await userRef.update({ status, updatedAt: new Date().toISOString(), updatedBy: ownerUid });
+  if (status === 'blocked') await adminAuth.updateUser(uid, { disabled: true });
+  else await adminAuth.updateUser(uid, { disabled: false });
+  await writePlatformAudit(ownerUid, 'user.status.changed', { uid, status });
+  return { uid, status };
 });

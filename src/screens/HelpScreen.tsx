@@ -1,6 +1,6 @@
 import React from 'react';
 import { BookOpen, Wallet, ShoppingCart, Users, Boxes, ClipboardList, BarChart3, Mail, Linkedin, Instagram, CheckCircle2 } from 'lucide-react';
-import { CreatorLogo } from '../components/SharedUI';
+import { CreatorLogo, ScreenHeader } from '../components/SharedUI';
 
 const treinamentos = [
   { icon: Wallet, titulo: '1. Comece pelo caixa', passos: ['Acesse Caixa Diário.', 'Informe o fundo inicial e clique em Abrir Caixa.', 'Registre entradas, saídas e sangrias durante o dia.', 'Feche o caixa ao final da operação e confira o saldo.'] },
@@ -14,11 +14,7 @@ const treinamentos = [
 export function HelpScreen() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <header>
-        <div className="mb-3 flex items-center gap-3 text-[#4A3AFF]"><BookOpen size={24} /><span className="text-xs font-bold uppercase tracking-[0.2em]">Central de treinamento</span></div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">Ajuda e treinamento</h1>
-        <p className="mt-2 max-w-2xl text-slate-500">Aprenda o fluxo recomendado para operar a VISTTA com segurança e manter os dados da ótica organizados.</p>
-      </header>
+      <ScreenHeader eyebrow="Suporte / Central de treinamento" title="Ajuda e treinamento" description="Aprenda o fluxo recomendado para operar a VISTTA com segurança e manter os dados da ótica organizados." />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {treinamentos.map(({ icon: Icon, titulo, passos }) => <article key={titulo} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">

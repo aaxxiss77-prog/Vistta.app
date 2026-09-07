@@ -1,4 +1,5 @@
 import React, { ErrorInfo, ReactNode } from 'react';
+import { AlertCircle } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -31,9 +32,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 p-4 sm:p-6 text-center">
         <div className="max-w-md rounded-3xl bg-white p-8 shadow-lg">
-          <h1 className="mb-3 text-xl font-bold text-slate-900">Ocorreu um erro inesperado</h1>
-          <p className="mb-6 text-sm text-slate-500">A tela foi protegida para evitar uma falha silenciosa. Recarregue e tente novamente.</p>
-          <p className="mb-6 break-words rounded-xl bg-rose-50 p-3 text-left text-xs text-rose-700">{this.state.message}</p>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600"><AlertCircle size={24} /></div>
+          <h1 className="mb-3 text-xl font-bold text-slate-900">Não foi possível carregar esta tela</h1>
+          <p className="mb-6 text-sm leading-6 text-slate-500">O VISTTA protegeu sua sessão para evitar dados incompletos. Recarregue e tente novamente. Se o problema continuar, verifique a conexão com o Firebase.</p>
           <button onClick={this.reload} className="rounded-xl bg-[var(--vistta-plum)] px-5 py-3 font-bold text-white hover:bg-[var(--vistta-violet)]">Recarregar aplicação</button>
         </div>
       </div>

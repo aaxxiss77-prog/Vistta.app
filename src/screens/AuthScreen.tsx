@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, GoogleAuthProvider, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, User } from 'firebase/auth';
 import { ref, update, get } from 'firebase/database';
 import { auth, db } from '../config/firebase';
-import { AlertTriangle, Mail, Lock, EyeOff, Eye, Store, Package, BarChart3, ShieldCheck, Instagram, Linkedin, ArrowUpRight, CheckCircle2 } from 'lucide-react';
-import { CreatorLogo, LogoVistta, ModalBase } from '../components/SharedUI';
+import { Mail, Lock, EyeOff, Eye, Store, Package, BarChart3, ShieldCheck, Instagram, Linkedin, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { CreatorLogo, FeedbackAlert, LogoVistta, ModalBase } from '../components/SharedUI';
 
 export function AuthScreen() {
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'recover' | 'reset'>('login');
@@ -265,8 +265,8 @@ export function AuthScreen() {
              </div>
              
              <form onSubmit={authMode === 'recover' ? (event) => { event.preventDefault(); void handlePasswordReset(); } : authMode === 'reset' ? handlePasswordChange : handleAuth} className="space-y-4">
-               {authError && (<div role="alert" className="bg-rose-50 text-rose-600 p-3.5 rounded-xl text-sm font-bold flex gap-3 border border-rose-100"><AlertTriangle size={18} /><span>{authError}</span></div>)}
-               {resetFeedback && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-sm font-semibold text-emerald-700">{resetFeedback}</p>}
+               {authError && <FeedbackAlert>{authError}</FeedbackAlert>}
+               {resetFeedback && <FeedbackAlert type="success">{resetFeedback}</FeedbackAlert>}
                {accountExists && <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-[#6d4aff]"><button type="button" onClick={() => openMode('login')} className="hover:underline">Entrar</button><button type="button" onClick={() => openMode('recover')} className="hover:underline">Esqueci minha senha</button></div>}
                
                <div>

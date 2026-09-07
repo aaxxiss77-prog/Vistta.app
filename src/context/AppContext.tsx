@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef, ReactNode } from 'react';
 import { getApps, initializeApp } from 'firebase/app';
-import { ref, push, update, remove, onValue, query, limitToLast, orderByChild, startAt, runTransaction, get, getDatabase } from 'firebase/database';
+import { ref, push, update, remove, onValue, query, limitToLast, orderByChild, startAt, get, getDatabase } from 'firebase/database';
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail, signOut, User } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { db, auth, firebaseConfig, functions } from '../config/firebase';
@@ -24,6 +24,7 @@ interface AppContextType {
   user: User | null;
   loadingAuth: boolean;
   userRole: string | null;
+  platformOwner: boolean;
   empresaId: string | null;
   dadosEmpresa: { nome?: string } | null;
   databaseError: string | null;
@@ -68,6 +69,10 @@ interface AppContextType {
   pdvPagamento: string;
   setPdvPagamento: (p: string) => void;
   finalizandoVenda: boolean;
+  getPlatformOverview: () => Promise<any>;
+  listPlatformCompanies: () => Promise<any>;
+  setPlatformCompanyStatus: (companyId: string, status: 'active' | 'blocked') => Promise<void>;
+  setPlatformUserStatus: (uid: string, status: 'active' | 'blocked') => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -82,6 +87,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [platformOwner, setPlatformOwner] = useState(false);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [dadosEmpresa, setDadosEmpresa] = useState<{ nome?: string } | null>(null);
   const [databaseError, setDatabaseError] = useState<string | null>(null);
@@ -186,9 +192,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       clearProfileListener();
       if (u) {
         setDatabaseError(null);
+        u.getIdTokenResult().then(token => setPlatformOwner(token.claims.platformOwner === true)).catch(() => setPlatformOwner(false));
         profileTimeout = setTimeout(() => {
           console.error('Tempo excedido ao carregar o perfil do usuário.');
-          setUser(u);
+          setDatabaseError('Não foi possível carregar seu perfil no Firebase. Verifique a conexão e tente novamente.');
+          setUser(null);
+          setEmpresaId(null);
+          setUserRole(null);
           setLoadingAuth(false);
         }, 10000);
 
@@ -216,7 +226,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             console.error('Não foi possível carregar o perfil do usuário:', error);
             setEmpresaId(null);
             setUserRole(null);
-            setUser(u);
+            setDadosEmpresa(null);
+            setDatabaseError('Não foi possível carregar seu perfil no Firebase. Verifique as regras do Realtime Database.');
+            setUser(null);
             setLoadingAuth(false);
             clearProfileListener();
           }
@@ -225,6 +237,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setEmpresaId(null);
         setUserRole(null);
+        setPlatformOwner(false);
+        setPlatformOwner(false);
         setDadosEmpresa(null);
         setDatabaseError(null);
         setLoadingAuth(false);
@@ -346,9 +360,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (userRole !== 'admin') throw new Error('Somente administradores podem criar usuários.');
     const email = String(data.email || '').trim().toLowerCase();
     if (!email) throw new Error('Informe o e-mail do usuário.');
+    const senha = String(data.senha || '');
+    const confirmarSenha = String(data.confirmarSenha || '');
+    if (senha && senha.length < 6) throw new Error('A senha deve ter pelo menos 6 caracteres.');
+    if (senha !== confirmarSenha) throw new Error('As senhas informadas não coincidem.');
     let criado: User | null = null;
     try {
-      const credencial = await createUserWithEmailAndPassword(provisioningAuth, email, `${crypto.randomUUID()}Aa1!`);
+      const credencial = await createUserWithEmailAndPassword(provisioningAuth, email, senha || `${crypto.randomUUID()}Aa1!`);
       criado = credencial.user;
       await update(ref(provisioningDb, `users/${criado.uid}`), {
         empresaId: empresa,
@@ -357,8 +375,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         nome: data.nome || '',
         convidadoPor: user.uid
       });
-      await sendPasswordResetEmail(provisioningAuth, email);
-      await saveRecord('usuarios', { ...data, email, authUid: criado.uid, status: 'convite_enviado', criadoEm: new Date().toISOString() });
+      if (!senha) await sendPasswordResetEmail(provisioningAuth, email);
+      const { senha: _senha, confirmarSenha: _confirmarSenha, ...dadosUsuario } = data;
+      await saveRecord('usuarios', { ...dadosUsuario, email, authUid: criado.uid, status: senha ? 'acesso_criado' : 'convite_enviado', criadoEm: new Date().toISOString() });
       await signOut(provisioningAuth);
     } catch (error: any) {
       if (criado) await remove(ref(provisioningDb, `users/${criado.uid}`)).catch(() => undefined);
@@ -391,6 +410,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await httpsCallable(functions, 'addCashEntry')({ caixaId: caixa.id, ...data });
   };
 
+  const getPlatformOverview = () => httpsCallable(functions, 'getPlatformOverview')({});
+  const listPlatformCompanies = () => httpsCallable(functions, 'listPlatformCompanies')({});
+  const setPlatformCompanyStatus = async (companyId: string, status: 'active' | 'blocked') => { await httpsCallable(functions, 'setCompanyStatus')({ companyId, status }); };
+  const setPlatformUserStatus = async (uid: string, status: 'active' | 'blocked') => { await httpsCallable(functions, 'setUserStatus')({ uid, status }); };
+
   const finalizarVenda = async (comoOrcamento = false) => {
     if (vendaEmProcessamento.current) return;
     if (carrinho.length === 0 || !empresaId) return alert("Carrinho vazio!");
@@ -401,7 +425,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     let desc = Math.max(0, Number(pdvDesconto) || 0);
     desc = Math.min(desc, subtotal);
     
-    const estoqueReservado: CarrinhoItem[] = [];
     vendaEmProcessamento.current = true;
     setFinalizandoVenda(true);
     try {
@@ -425,9 +448,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setCarrinho([]); setPdvDesconto(0); setPdvCliente('');
       alert(comoOrcamento ? "Orçamento salvo!" : "Venda concluída com sucesso!");
     } catch (e: any) {
-      if (!comoOrcamento && estoqueReservado.length > 0) {
-        await Promise.all(estoqueReservado.map(item => runTransaction(ref(db, `empresas/${empresaId}/produtos/${item.id}/qtd`), quantidadeAtual => Number(quantidadeAtual || 0) + item.qtd)));
-      }
       alert("Erro ao finalizar: " + e.message);
     } finally {
       vendaEmProcessamento.current = false;
@@ -436,12 +456,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = {
-    user, loadingAuth, userRole, empresaId, dadosEmpresa, databaseError, configurarOtica, logout,
+    user, loadingAuth, userRole, platformOwner, empresaId, dadosEmpresa, databaseError, configurarOtica, logout,
     produtos, clientes, vendas, caixas, orcamentos, ordensServico, carrinho,
     fornecedores, contas, categorias, usuarios,
     activeTab, setActiveTab, pdvSearch, setPdvSearch, abrirCaixa, fecharCaixa,
     salvarProduto, excluirProduto, salvarCliente, excluirCliente, salvarCadastro, excluirCadastro, excluirOrcamento, salvarOrdemServico, converterOrcamentoParaOs, registrarLancamentoCaixa,
-    addToCart, removeFromCart, finalizarVenda, finalizandoVenda,
+    addToCart, removeFromCart, finalizarVenda, finalizandoVenda, getPlatformOverview, listPlatformCompanies, setPlatformCompanyStatus, setPlatformUserStatus,
     caixaAberto, totalVendasCaixa, pdvCliente, setPdvCliente, pdvDesconto, setPdvDesconto, pdvPagamento, setPdvPagamento
   };
 

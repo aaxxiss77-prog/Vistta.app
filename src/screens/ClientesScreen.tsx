@@ -1,5 +1,5 @@
 import React from 'react';
-import { ModalBase } from '../components/SharedUI';
+import { ModalBase, ScreenHeader } from '../components/SharedUI';
 import { FormCliente } from '../components/Forms/FormCliente';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
@@ -18,15 +18,9 @@ export function ClientesScreen() {
   
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-8 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Clientes & Receitas</h1>
-          <p className="text-slate-500">Gestão de contatos e prontuários óticos.</p>
-        </div>
-        <button onClick={() => { setClienteEditando(null); setModalAberto(true); }} className="flex w-full items-center justify-center rounded-xl bg-[var(--vistta-plum)] px-6 py-3 font-semibold text-white shadow-md hover:bg-[var(--vistta-violet)] sm:w-auto">
+      <ScreenHeader eyebrow="Cadastros" title="Clientes & Receitas" description="Gestão de contatos e prontuários óticos." action={<button onClick={() => { setClienteEditando(null); setModalAberto(true); }} className="flex w-full items-center justify-center rounded-xl bg-[var(--vistta-plum)] px-6 py-3 font-semibold text-white shadow-md hover:bg-[var(--vistta-violet)] sm:w-auto">
           <Plus size={20} className="mr-2" /> Novo Cliente
-        </button>
-      </div>
+        </button>} />
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm flex-1 flex flex-col overflow-hidden min-h-[400px]">
         <div className="flex-1 overflow-auto custom-scrollbar p-2">

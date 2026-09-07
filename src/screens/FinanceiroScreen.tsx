@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, PackageOpen, ArrowRightLeft } from 'lucide-react';
 import { useAppContext, formatMoney, toList } from '../context/AppContext';
-import { DashCard } from '../components/SharedUI';
+import { DashCard, ScreenHeader } from '../components/SharedUI';
 import { Venda, Cliente } from '../types';
 
 export function FinanceiroScreen() {
@@ -14,10 +14,7 @@ export function FinanceiroScreen() {
   
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Financeiro (DRE)</h1>
-        <p className="text-slate-500">Análise de lucratividade real e CMV.</p>
-      </div>
+      <ScreenHeader eyebrow="Gestão" title="Financeiro (DRE)" description="Análise de lucratividade real e CMV." />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
         <DashCard title="Faturamento Bruto" value={formatMoney(vendas.reduce((a,b)=>a+(b.total||0),0))} icon={TrendingUp} />

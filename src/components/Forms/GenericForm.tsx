@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export function GenericForm({ config, initialData, onSave, onClose }: any) {
   const [form, setForm] = useState(initialData || config.defaultData);
   const [submitError, setSubmitError] = useState('');
+  const [saving, setSaving] = useState(false);
   
   const handleChange = (field: string, value: any) => setForm((prev: any) => ({ ...prev, [field]: value }));
   
@@ -11,8 +12,10 @@ export function GenericForm({ config, initialData, onSave, onClose }: any) {
   
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     setSubmitError('');
-    try { await onSave(form); } catch (error: any) { setSubmitError(error?.message || 'Não foi possível salvar o registro.'); }
+    setSaving(true);
+    try { await onSave(form); } catch (error: any) { setSubmitError(error?.message || 'Não foi possível salvar o registro.'); } finally { setSaving(false); }
   };
 
   return (
@@ -27,15 +30,15 @@ export function GenericForm({ config, initialData, onSave, onClose }: any) {
                 {f.options.map((o: any) => <option key={o.val} value={o.val}>{o.label}</option>)}
               </select>
             ) : (
-              <input type={f.type} step={f.step} required={f.required} value={form[f.name] || ''} onChange={e=>handleChange(f.name, e.target.value)} className={inputClass} />
+              <input type={f.type} step={f.step} required={f.required} placeholder={f.placeholder} autoComplete={f.type === 'password' ? 'new-password' : undefined} value={form[f.name] || ''} onChange={e=>handleChange(f.name, e.target.value)} className={inputClass} />
             )}
           </div>
         ))}
       </div>
       {submitError && <p className="mb-4 rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-600">{submitError}</p>}
       <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
-        <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
-        <button type="submit" className="px-6 py-3 rounded-xl bg-[var(--vistta-plum)] text-white font-bold hover:bg-[var(--vistta-violet)] shadow-md transition-all">Salvar</button>
+        <button type="button" onClick={onClose} disabled={saving} className="px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-colors disabled:cursor-not-allowed disabled:opacity-60">Cancelar</button>
+        <button type="submit" disabled={saving} className="px-6 py-3 rounded-xl bg-[var(--vistta-plum)] text-white font-bold hover:bg-[var(--vistta-violet)] shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-60">{saving ? (config.busyLabel || 'Salvando...') : (config.submitLabel || 'Salvar')}</button>
       </div>
     </form>
   );

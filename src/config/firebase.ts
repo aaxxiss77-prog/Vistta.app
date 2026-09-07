@@ -16,7 +16,15 @@ export const firebaseConfig = {
 
 const missingFirebaseConfig = Object.entries(firebaseConfig)
   .filter(([name, value]) => name !== 'measurementId' && !value)
-  .map(([name]) => `VITE_FIREBASE_${name.replace(/[A-Z]/g, letter => `_${letter}`).toUpperCase()}`);
+  .map(([name]) => ({
+    apiKey: 'VITE_FIREBASE_API_KEY',
+    authDomain: 'VITE_FIREBASE_AUTH_DOMAIN',
+    databaseURL: 'VITE_FIREBASE_DATABASE_URL',
+    projectId: 'VITE_FIREBASE_PROJECT_ID',
+    storageBucket: 'VITE_FIREBASE_STORAGE_BUCKET',
+    messagingSenderId: 'VITE_FIREBASE_MESSAGING_SENDER_ID',
+    appId: 'VITE_FIREBASE_APP_ID'
+  }[name] || name));
 
 if (missingFirebaseConfig.length > 0) {
   throw new Error(`Configuração do Firebase ausente. Crie um arquivo .env com: ${missingFirebaseConfig.join(', ')}`);

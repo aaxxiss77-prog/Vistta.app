@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ClipboardList, Plus, Edit2 } from 'lucide-react';
-import { ModalBase } from '../components/SharedUI';
+import { ModalBase, ScreenHeader } from '../components/SharedUI';
 import { formatMoney, toList, useAppContext } from '../context/AppContext';
 import { OrdemServico, StatusOs } from '../types';
 
@@ -47,10 +47,7 @@ export function OrdensServicoScreen() {
   };
 
   return <div className="flex flex-col h-full">
-    <div className="mb-8 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-      <div><h1 className="text-2xl sm:text-3xl font-bold mb-2">Ordens de Serviço</h1><p className="text-slate-500">Acompanhe montagem, laboratório e retirada.</p></div>
-      <button onClick={() => abrir()} className="flex w-full items-center justify-center rounded-xl bg-[#4A3AFF] px-6 py-3 font-semibold text-white sm:w-auto"><Plus size={20} className="mr-2" /> Nova OS</button>
-    </div>
+    <ScreenHeader eyebrow="Operação" title="Ordens de Serviço" description="Acompanhe montagem, laboratório e retirada." action={<button onClick={() => abrir()} className="flex w-full items-center justify-center rounded-xl bg-[var(--vistta-plum)] px-6 py-3 font-semibold text-white hover:bg-[var(--vistta-violet)] sm:w-auto"><Plus size={20} className="mr-2" /> Nova OS</button>} />
     <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm flex-1 overflow-auto p-2">
       <table className="w-full min-w-[800px] text-left"><thead><tr className="border-b border-slate-100 text-[11px] text-slate-400 uppercase font-semibold"><th className="px-6 py-4">Cliente</th><th className="px-6 py-4">Itens</th><th className="px-6 py-4">Previsão</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Total</th><th className="px-6 py-4">Ações</th></tr></thead>
         <tbody className="divide-y divide-slate-50">{ordensServico.map(os => <tr key={os.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30"><td className="py-4 px-6 font-bold">{clientes.find(cliente => cliente.id === os.clienteId)?.nome || 'Cliente não encontrado'}</td><td className="py-4 px-6">{itensDaOs(os).length} item(ns)</td><td className="py-4 px-6">{os.previsaoEntrega ? new Date(os.previsaoEntrega).toLocaleDateString('pt-BR') : '-'}</td><td className="py-4 px-6"><select value={os.status || 'aguardando_montagem'} onChange={e => alterarStatus(os, e.target.value as StatusOs)} className="bg-slate-100 rounded-lg px-2 py-1 text-xs font-bold"><option value="aguardando_montagem">Aguardando Montagem</option><option value="em_laboratorio">Em Laboratório</option><option value="pronto_retirada">Pronto para Retirada</option><option value="entregue">Entregue</option><option value="cancelada">Cancelada</option></select></td><td className="py-4 px-6 text-right font-bold">{formatMoney(itensDaOs(os).reduce((total, item) => total + Number(item.valor || 0) * Number(item.qtd || 0), 0))}</td><td className="py-4 px-6"><button onClick={() => abrir(os)} className="p-2 text-slate-400 hover:text-[#4A3AFF]"><Edit2 size={16} /></button></td></tr>)}

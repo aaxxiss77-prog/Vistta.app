@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Search, Lock, X, FileText, Check } from 'lucide-react';
 import { useAppContext, formatMoney } from '../context/AppContext';
+import { ScreenHeader } from '../components/SharedUI';
 
 export function PdvScreen() {
   const {
@@ -9,8 +10,6 @@ export function PdvScreen() {
     finalizarVenda, finalizandoVenda, setActiveTab, produtos
   } = useAppContext();
   
-  const [mobileTab, setMobileTab] = useState('produtos');
-
   // Filtragem local
   const pdvFiltered = produtos.filter(p => 
     Number(p.qtd) > 0 && 
@@ -21,16 +20,11 @@ export function PdvScreen() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-6 flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Ponto de Venda</h1>
-          {caixaAberto ? (
+      <ScreenHeader eyebrow="Operação" title="Ponto de Venda" action={caixaAberto ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">Caixa Aberto</span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-xs font-bold"><Lock size={12}/> Caixa Fechado</span>
-          )}
-        </div>
-      </div>
+          )} />
 
       {!caixaAberto ? (
          <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center">

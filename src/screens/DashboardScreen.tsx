@@ -1,7 +1,7 @@
 import React from 'react';
-import { Boxes, TrendingUp, Users, AlertTriangle, Wallet, ShoppingCart, ArrowUpRight, FileText, Wrench, UserPlus, Search, Activity } from 'lucide-react';
+import { Boxes, TrendingUp, Users, AlertTriangle, ShoppingCart, ArrowUpRight, FileText, Wrench, UserPlus, Search, Activity } from 'lucide-react';
 import { useAppContext, formatMoney } from '../context/AppContext';
-import { ActionCard, DashCard } from '../components/SharedUI';
+import { ActionCard, DashCard, ScreenHeader } from '../components/SharedUI';
 
 export function DashboardScreen() {
   const { produtos, vendas, clientes, orcamentos, ordensServico, caixaAberto, setActiveTab } = useAppContext();
@@ -31,16 +31,9 @@ export function DashboardScreen() {
   
   return (
     <div className="flex flex-col h-full max-w-[1500px] mx-auto vistta-enter">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-8">
-        <div>
-          <div className="flex items-center gap-2 text-[#6d4aff] text-xs font-bold uppercase tracking-[.16em] mb-3"><Activity size={14} /> Visão operacional</div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight mb-2 text-[#201735] dark:text-white">Bom dia, vamos cuidar da ótica.</h1>
-          <p className="text-slate-500">O essencial da operação, organizado para uma decisão rápida.</p>
-        </div>
-        <div className={`inline-flex self-start sm:self-auto items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${caixaAberto ? 'bg-[#ecf8d9] text-[#476e17]' : 'bg-[#f3edf7] text-[#765d82]'}`}>
+      <ScreenHeader eyebrow="Visão operacional" title="Bom dia, vamos cuidar da ótica." description="O essencial da operação, organizado para uma decisão rápida." action={<div className={`inline-flex self-start items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${caixaAberto ? 'bg-[#ecf8d9] text-[#476e17]' : 'bg-[#f3edf7] text-[#765d82]'}`}>
           <span className={`w-2 h-2 rounded-full ${caixaAberto ? 'bg-[#81b52c]' : 'bg-[#aa8fb8]'}`} /> Caixa {caixaAberto ? 'aberto' : 'fechado'}
-        </div>
-      </div>
+        </div>} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <DashCard title="Estoque Total" value={estoqueTotal} subtitle="unidades cadastradas" icon={Boxes} />

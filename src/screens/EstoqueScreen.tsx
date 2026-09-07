@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { useAppContext, formatMoney } from '../context/AppContext';
 import { Produto } from '../types';
-import { ModalBase } from '../components/SharedUI';
+import { ModalBase, ScreenHeader } from '../components/SharedUI';
 import { FormProduto } from '../components/Forms/FormProduto';
 
 export function EstoqueScreen() {
@@ -19,15 +19,9 @@ export function EstoqueScreen() {
   
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-8 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Estoque</h1>
-          <p className="text-slate-500">Gerencie produtos e níveis de inventário.</p>
-        </div>
-        <button onClick={() => { setProdutoEditando(null); setModalAberto(true); }} className="flex w-full items-center justify-center rounded-xl bg-[var(--vistta-plum)] px-6 py-3 font-semibold text-white hover:bg-[var(--vistta-violet)] sm:w-auto">
+      <ScreenHeader eyebrow="Cadastros" title="Estoque" description="Gerencie produtos e níveis de inventário." action={<button onClick={() => { setProdutoEditando(null); setModalAberto(true); }} className="flex w-full items-center justify-center rounded-xl bg-[var(--vistta-plum)] px-6 py-3 font-semibold text-white hover:bg-[var(--vistta-violet)] sm:w-auto">
           <Plus size={20} className="mr-2" /> Adicionar Produto
-        </button>
-      </div>
+        </button>} />
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm flex-1 flex flex-col overflow-hidden min-h-[400px]">
         <div className="p-4 bg-white border-b border-slate-100">

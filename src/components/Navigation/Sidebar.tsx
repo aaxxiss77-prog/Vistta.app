@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Wallet, ShoppingCart, FileText, Boxes, Users, Tags, TrendingUp, ArrowRightLeft, Truck, UserPlus, LogOut, CircleHelp } from 'lucide-react';
+import { Home, Wallet, ShoppingCart, FileText, Boxes, Users, Tags, TrendingUp, ArrowRightLeft, UserPlus, LogOut, CircleHelp, Shield } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { CreatorLogo, LogoVistta } from '../SharedUI';
 import { Orcamento } from '../../types';
@@ -18,7 +18,7 @@ function SidebarCategory({ label }: { label: string }) {
 }
 
 export function Sidebar() {
-  const { activeTab, setActiveTab, caixaAberto, orcamentos, userRole, dadosEmpresa, user, logout } = useAppContext();
+  const { activeTab, setActiveTab, caixaAberto, orcamentos, userRole, platformOwner, dadosEmpresa, user, logout } = useAppContext();
   const [collapsed, setCollapsed] = useState(false);
   
   return (
@@ -33,6 +33,7 @@ export function Sidebar() {
       
       <div className={`flex-1 overflow-y-auto py-6 ${collapsed ? 'px-3' : 'px-4'} space-y-1 custom-scrollbar`}>
         <SidebarItem icon={Home} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} collapsed={collapsed} />
+        {platformOwner && <SidebarItem icon={Shield} label="Administração global" active={activeTab === 'platform'} onClick={() => { window.history.pushState({}, '', '/admin'); setActiveTab('platform'); }} collapsed={collapsed} />}
         
         <SidebarCategory label="Operação" />
         <SidebarItem icon={Wallet} label="Caixa Diário" active={activeTab === 'caixa'} onClick={() => setActiveTab('caixa')} badge={caixaAberto ? 'Aberto' : 'Fechado'} badgeColor={caixaAberto ? 'bg-[#c6ed76] text-[#30204d]' : 'bg-white/10 text-white/50'} collapsed={collapsed} />

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { LucideIcon, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Info, LucideIcon, X } from 'lucide-react';
 
 interface DashCardProps { 
   title: string; 
@@ -40,6 +40,20 @@ export function ActionCard({ icon: Icon, title, desc, onClick, color, bg }: any)
       <p className="text-[13px] text-slate-500">{desc}</p>
     </button>
   );
+}
+
+export function FeedbackAlert({ type = 'error', children }: { type?: 'error' | 'success' | 'info'; children: React.ReactNode }) {
+  const styles = {
+    error: { icon: AlertCircle, className: 'border-rose-100 bg-rose-50 text-rose-700' },
+    success: { icon: CheckCircle2, className: 'border-emerald-100 bg-emerald-50 text-emerald-700' },
+    info: { icon: Info, className: 'border-[var(--vistta-border)] bg-[var(--vistta-lavender)] text-[var(--vistta-plum)]' }
+  }[type];
+  const Icon = styles.icon;
+  return <div role={type === 'error' ? 'alert' : 'status'} className={`flex items-start gap-3 rounded-2xl border p-4 text-sm font-semibold leading-5 ${styles.className}`}><Icon size={18} className="mt-0.5 shrink-0" /> <span>{children}</span></div>;
+}
+
+export function ScreenHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: React.ReactNode }) {
+  return <div className="mb-8 flex flex-col gap-5 border-b border-[var(--vistta-border)] pb-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--vistta-violet)]">{eyebrow || 'VISTTA'}</p><h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-[var(--vistta-ink)] dark:text-white sm:text-3xl">{title}</h1>{description && <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--vistta-secondary)]">{description}</p>}</div>{action}</div>;
 }
 
 export function ModalBase({ open, onClose, title, width = "max-w-md", children }: any) {
