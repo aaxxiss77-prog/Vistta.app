@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, GoogleAuthProvider, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, User } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, User } from 'firebase/auth';
 import { ref, update, get } from 'firebase/database';
 import { auth, db } from '../config/firebase';
 import { Mail, Lock, EyeOff, Eye, Store, Package, BarChart3, ShieldCheck, Instagram, Linkedin, ArrowUpRight, CheckCircle2 } from 'lucide-react';
@@ -23,7 +23,7 @@ export function AuthScreen() {
     const userRef = ref(db, `users/${googleUser.uid}`);
     const snapshot = await get(userRef);
     if (!snapshot.exists()) {
-      await update(userRef, { role: 'admin', email: googleUser.email || '', nome: googleUser.displayName || '' });
+      await update(userRef, { role: 'admin', status: 'active', email: googleUser.email || '', nome: googleUser.displayName || '', createdAt: new Date().toISOString() });
     }
   };
 
@@ -108,10 +108,21 @@ export function AuthScreen() {
     setAuthError('');
     setIsLoggingIn(true);
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      await signInWithRedirect(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      await createGoogleProfile(result.user);
     } catch (error: any) {
-      setAuthError(getGoogleErrorMessage(error));
+      if (error?.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectError: any) {
+          setAuthError(getGoogleErrorMessage(redirectError));
+        }
+      } else {
+        setAuthError(getGoogleErrorMessage(error));
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -340,22 +351,22 @@ function LoginFooter({ onLegalOpen }: { onLegalOpen: (document: 'terms' | 'priva
   const linkedinUrl = 'https://www.linkedin.com/in/7icaaro';
 
   return (
-    <footer className="w-full pb-2 text-[9px] text-slate-500 dark:text-slate-400 sm:pb-4 sm:text-[10px]">
-      <div className="grid grid-cols-2 gap-x-4 gap-y-5 border-t border-[#e7e1ec] pt-5 dark:border-[#3d3154] sm:gap-x-5 sm:gap-y-7 sm:pt-6">
+    <footer className="w-full pb-2 text-[9px] text-white/55 sm:pb-4 sm:text-[10px]">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-5 border-t border-white/15 pt-5 sm:gap-x-5 sm:gap-y-7 sm:pt-6">
         <div>
-          <h3 className="mb-2 min-h-4 text-[10px] font-bold text-slate-900 dark:text-white">Navegação</h3>
-          <div className="space-y-1.5 sm:space-y-2.5"><span className="block"><strong className="font-medium text-slate-700 dark:text-slate-300">Dashboard</strong><small className="hidden text-[9px] text-slate-400 sm:block">Visão geral da ótica</small></span><span className="block"><strong className="font-medium text-slate-700 dark:text-slate-300">Caixa diário</strong><small className="hidden text-[9px] text-slate-400 sm:block">Abertura e fechamento</small></span><span className="block"><strong className="font-medium text-slate-700 dark:text-slate-300">Clientes e estoque</strong><small className="hidden text-[9px] text-slate-400 sm:block">Cadastros e inventário</small></span><a href={supportEmail} className="block hover:text-[#6d4aff]">Fale conosco</a></div>
+          <h3 className="mb-2 min-h-4 text-[10px] font-bold text-white">Navegação</h3>
+          <div className="space-y-1.5 sm:space-y-2.5"><span className="block"><strong className="font-medium text-white/75">Dashboard</strong><small className="hidden text-[9px] text-white/45 sm:block">Visão geral da ótica</small></span><span className="block"><strong className="font-medium text-white/75">Caixa diário</strong><small className="hidden text-[9px] text-white/45 sm:block">Abertura e fechamento</small></span><span className="block"><strong className="font-medium text-white/75">Clientes e estoque</strong><small className="hidden text-[9px] text-white/45 sm:block">Cadastros e inventário</small></span><a href={supportEmail} className="block hover:text-[#b879ff]">Fale conosco</a></div>
         </div>
         <div>
-          <h3 className="mb-2 min-h-4 text-[10px] font-bold text-slate-900 dark:text-white">Legal</h3>
+          <h3 className="mb-2 min-h-4 text-[10px] font-bold text-white">Legal</h3>
           <div className="space-y-1.5 sm:space-y-2.5"><button type="button" onClick={() => onLegalOpen('terms')} className="block text-left hover:text-[#6d4aff]"><strong className="font-medium">Termos de uso</strong><small className="hidden text-[9px] text-slate-400 sm:block">Regras da plataforma</small></button><button type="button" onClick={() => onLegalOpen('privacy')} className="block text-left hover:text-[#6d4aff]"><strong className="font-medium">Política de privacidade</strong><small className="hidden text-[9px] text-slate-400 sm:block">Proteção dos seus dados</small></button><a href="mailto:icaroprojetos7@gmail.com?subject=Exclusão%20de%20conta" className="block hover:text-[#6d4aff]"><strong className="font-medium">Exclusão de conta</strong><small className="hidden text-[9px] text-slate-400 sm:block">Solicite pelo suporte</small></a></div>
         </div>
         <div>
-          <h3 className="mb-2 min-h-4 text-[10px] font-bold text-slate-900 dark:text-white">Produto</h3>
-          <div className="space-y-1.5 sm:space-y-2.5"><span className="block"><strong className="font-medium text-slate-700 dark:text-slate-300">PDV e vendas</strong><small className="hidden text-[9px] text-slate-400 sm:block">Venda com agilidade</small></span><span className="block"><strong className="font-medium text-slate-700 dark:text-slate-300">Orçamentos e OS</strong><small className="hidden text-[9px] text-slate-400 sm:block">Serviços sob controle</small></span><span className="block"><strong className="font-medium text-slate-700 dark:text-slate-300">Financeiro e DRE</strong><small className="hidden text-[9px] text-slate-400 sm:block">Resultados da operação</small></span></div>
+          <h3 className="mb-2 min-h-4 text-[10px] font-bold text-white">Produto</h3>
+          <div className="space-y-1.5 sm:space-y-2.5"><span className="block"><strong className="font-medium text-white/75">PDV e vendas</strong><small className="hidden text-[9px] text-white/45 sm:block">Venda com agilidade</small></span><span className="block"><strong className="font-medium text-white/75">Orçamentos e OS</strong><small className="hidden text-[9px] text-white/45 sm:block">Serviços sob controle</small></span><span className="block"><strong className="font-medium text-white/75">Financeiro e DRE</strong><small className="hidden text-[9px] text-white/45 sm:block">Resultados da operação</small></span></div>
         </div>
         <div>
-          <h3 className="mb-2 min-h-4 text-[10px] font-bold text-slate-900 dark:text-white">Status e suporte</h3>
+          <h3 className="mb-2 min-h-4 text-[10px] font-bold text-white">Status e suporte</h3>
           <div className="mb-2 flex items-center gap-1.5 text-emerald-600 dark:text-[#c6ed76]"><CheckCircle2 size={12} /> Operacional</div>
           <p className="mb-2 hidden leading-relaxed sm:block">Dados sincronizados em tempo real</p>
           <div className="space-y-2">

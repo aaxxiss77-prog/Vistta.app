@@ -62,9 +62,13 @@ function MainLayout() {
     return <AuthScreen />;
   }
 
-  const isAdminPath = window.location.pathname === '/admin' || activeTab === 'platform';
+  const isAdminPath = window.location.pathname === '/admin' || window.location.pathname === '/developer' || activeTab === 'platform';
   if (isAdminPath) {
     return platformOwner ? <PlatformAdminScreen /> : <ForbiddenScreen />;
+  }
+
+  if (platformOwner) {
+    return <PlatformAdminScreen />;
   }
 
   if (!empresaId) {

@@ -66,7 +66,7 @@ export function Sidebar() {
           <div className="w-10 h-10 rounded-full bg-[#c6ed76] text-[#30204d] flex items-center justify-center font-bold mr-3 shrink-0">
             {user?.email?.charAt(0).toUpperCase() || 'U'}
           </div>
-          {!collapsed && <div className="min-w-0"><div className="text-sm font-bold truncate text-white">{user?.email?.split('@')[0] || 'Usuário'}</div><div className="text-[10px] text-white/45 font-bold uppercase">{userRole === 'admin' ? 'Administrador' : 'Vendedor'}</div></div>}
+          {!collapsed && <div className="min-w-0"><div className="text-sm font-bold truncate text-white">{user?.email?.split('@')[0] || 'Usuário'}</div><div className="text-[10px] text-white/45 font-bold uppercase">{userRole === 'admin' ? 'Administrador' : userRole === 'manager' ? 'Gestor' : 'Usuário'}</div></div>}
         </div>
         {!collapsed && <button onClick={() => logout().catch((error) => console.error('Não foi possível sair:', error))} className="text-white/45 hover:text-[#f4c96b]" title="Sair"><LogOut size={18} /></button>}
       </div>

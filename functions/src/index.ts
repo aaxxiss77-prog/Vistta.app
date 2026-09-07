@@ -29,7 +29,7 @@ function requireAuth(request: { auth?: { uid: string } | null }): string {
 
 function requireOwner(request: CallableRequest): string {
   const uid = requireAuth(request);
-  if (request.auth?.token?.platformOwner !== true) throw new HttpsError('permission-denied', 'Somente o proprietário da plataforma pode executar esta operação.');
+  if (request.auth?.token?.role !== 'developer' && request.auth?.token?.platformOwner !== true) throw new HttpsError('permission-denied', 'Somente um developer da plataforma pode executar esta operação.');
   return uid;
 }
 

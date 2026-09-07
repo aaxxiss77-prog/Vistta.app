@@ -188,11 +188,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       profileTimeout = undefined;
     };
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (u) => {
       clearProfileListener();
       if (u) {
         setDatabaseError(null);
-        u.getIdTokenResult().then(token => setPlatformOwner(token.claims.platformOwner === true)).catch(() => setPlatformOwner(false));
+        let claims: Record<string, unknown> = {};
+        try {
+          claims = (await u.getIdTokenResult()).claims;
+        } catch (error) {
+          console.error('Não foi possível validar as permissões da sessão:', error);
+        }
+        const isDeveloper = claims.role === 'developer' || claims.platformOwner === true;
+        setPlatformOwner(isDeveloper);
+        if (isDeveloper) {
+          setUser(u);
+          setUserRole('developer');
+          setEmpresaId(null);
+          setDadosEmpresa(null);
+          setLoadingAuth(false);
+          return;
+        }
         profileTimeout = setTimeout(() => {
           console.error('Tempo excedido ao carregar o perfil do usuário.');
           setDatabaseError('Não foi possível carregar seu perfil no Firebase. Verifique a conexão e tente novamente.');
@@ -205,9 +220,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeProfile = onValue(
           ref(db, `users/${u.uid}`),
           (snap) => {
+            if (!snap.exists()) return;
             const data = snap.val();
             setEmpresaId(data?.empresaId || null);
-            setUserRole(data?.role || null);
+            setUserRole(['admin', 'manager', 'user'].includes(data?.role) ? data.role : null);
             if (data?.empresaId) {
               get(ref(db, `empresas/${data.empresaId}/info`)).then((snap) => {
                 setDadosEmpresa(snap.exists() ? snap.val() : null);
@@ -368,9 +384,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const credencial = await createUserWithEmailAndPassword(provisioningAuth, email, senha || `${crypto.randomUUID()}Aa1!`);
       criado = credencial.user;
+      const invitedRole = data.perfil === 'manager' ? 'manager' : 'user';
       await update(ref(provisioningDb, `users/${criado.uid}`), {
         empresaId: empresa,
-        role: data.perfil || 'vendedor',
+        role: invitedRole,
+        status: 'active',
         email,
         nome: data.nome || '',
         convidadoPor: user.uid

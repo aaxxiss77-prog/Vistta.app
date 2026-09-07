@@ -53,10 +53,10 @@ export function CadastrosGenericosScreen({ activeTab }: { activeTab: string }) {
     categorias: { defaultData: { nome: '' }, fields: [
       { name: 'nome', label: 'Nome', type: 'text', required: true }
     ] },
-    usuarios: { submitLabel: 'Criar acesso', busyLabel: 'Criando acesso...', defaultData: { nome: '', email: '', perfil: 'vendedor', senha: '', confirmarSenha: '' }, fields: [
+    usuarios: { submitLabel: 'Criar acesso', busyLabel: 'Criando acesso...', defaultData: { nome: '', email: '', perfil: 'user', senha: '', confirmarSenha: '' }, fields: [
       { name: 'nome', label: 'Nome', type: 'text', required: true },
       { name: 'email', label: 'E-mail', type: 'email', required: true },
-      { name: 'perfil', label: 'Perfil', type: 'select', required: true, options: [{ val: 'vendedor', label: 'Vendedor' }, { val: 'admin', label: 'Administrador' }] },
+      { name: 'perfil', label: 'Perfil', type: 'select', required: true, options: [{ val: 'user', label: 'Usuário' }, { val: 'manager', label: 'Gestor' }] },
       { name: 'senha', label: 'Senha (opcional)', type: 'password', placeholder: 'Deixe vazio para enviar convite' },
       { name: 'confirmarSenha', label: 'Confirmar senha', type: 'password', placeholder: 'Repita a senha criada' }
     ] }
